@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Park It! Car Parking Puzzle</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#e9e6df;--fg:#22262d;--mut:#6b6f76;--asph:#4a4f58;--line:#f0c419;--frame:#2e323a;--card:#fff;--btn:#22262d;--btnfg:#fff;color-scheme:light}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15181d;--fg:#eceae4;--mut:#9a9ea6;--asph:#3a3e46;--frame:#0c0e11;--card:#22262d;--btn:#eceae4;--btnfg:#15181d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15181d;--fg:#eceae4;--mut:#9a9ea6;--asph:#3a3e46;--frame:#0c0e11;--card:#22262d;--btn:#eceae4;--btnfg:#15181d;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:500 16px/1.4 Barlow,system-ui,sans-serif;min-height:100%;display:flex;flex-direction:column;align-items:center;padding:14px 12px 24px;-webkit-user-select:none;user-select:none}
+header{width:min(92vw,440px);display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+h1{font:700 40px/1 "Barlow Condensed",Impact,sans-serif;margin:0;letter-spacing:.5px}
+.stats{display:flex;gap:16px;font-size:15px;color:var(--mut);text-align:right}
+.stats b{display:block;font:700 26px/1 "Barlow Condensed",Impact,sans-serif;color:var(--fg)}
+.lvl{display:flex;align-items:center;gap:8px;width:min(92vw,440px);margin-bottom:10px;font-size:17px}
+.lvl button{width:34px;height:34px;padding:0;font-size:20px}
+.lvl span{flex:1;text-align:center;font:700 22px "Barlow Condensed",sans-serif}
+.frame{background:var(--frame);padding:10px;border-radius:16px;position:relative;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.board{--w:min(92vw,440px);width:calc(var(--w) - 20px);height:calc(var(--w) - 20px);position:relative;background-color:var(--asph);
+background-image:linear-gradient(var(--line) 0 0),linear-gradient(var(--line) 0 0);background-size:0 0;border-radius:6px}
+.board::before{content:"";position:absolute;inset:0;border-radius:6px;pointer-events:none;
+background-image:linear-gradient(rgba(255,255,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.12) 1px,transparent 1px);background-size:var(--c) var(--c)}
+.exit{position:absolute;right:0;width:12px;background:var(--bg)}
+.exitlbl{position:absolute;color:var(--mut);font:700 13px "Barlow Condensed",sans-serif;pointer-events:none;left:100%;margin-left:14px;white-space:nowrap}
+.car{position:absolute;border-radius:11px;touch-action:none;cursor:grab;box-shadow:0 3px 0 rgba(0,0,0,.3),inset 0 2px 0 rgba(255,255,255,.3);transition:left .28s cubic-bezier(.3,1.5,.5,1),top .28s cubic-bezier(.3,1.5,.5,1)}
+.car.drag{cursor:grabbing;transition:none;z-index:5;box-shadow:0 8px 14px rgba(0,0,0,.35),inset 0 2px 0 rgba(255,255,255,.3)}
+.car::before{content:"";position:absolute;background:rgba(20,24,30,.42);border-radius:7px}
+.car.h::before{left:26%;right:22%;top:16%;bottom:16%}
+.car.v::before{top:26%;bottom:22%;left:16%;right:16%}
+.car::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:#fff6c0;box-shadow:0 0 6px #ffe97a}
+.car.h::after{right:5px;top:22%;box-shadow:0 calc(var(--c)*.34) 0 #fff6c0,0 0 6px #ffe97a}
+.car.v::after{bottom:5px;left:22%;box-shadow:calc(var(--c)*.34) 0 0 #fff6c0,0 0 6px #ffe97a}
+.car.hint{animation:pulse .5s ease-in-out 3}
+@keyframes pulse{50%{transform:scale(1.07)}}
+.car.out{transition:left .7s cubic-bezier(.5,0,.9,.4)}
+.car.enter{animation:drop .55s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:calc(var(--d)*60ms)}
+@keyframes drop{from{transform:translateY(-140%) scale(.85);opacity:0}to{transform:none;opacity:1}}
+.car.rev{animation:rev .28s}
+@keyframes rev{25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
+.puff{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(225,225,225,.75);pointer-events:none;z-index:4;animation:puff .85s ease-out forwards}
+@keyframes puff{to{transform:translate(-36px,-12px) scale(2.4);opacity:0}}
+.stats b{transform-origin:right center}
+.stats b.bump{animation:bump .3s ease-out}
+@keyframes bump{40%{transform:scale(1.4)}}
+.exitlbl{animation:nudge 1.3s ease-in-out infinite}
+@keyframes nudge{50%{transform:translateX(5px)}}
+.bar{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center}
+button{font:700 17px "Barlow Condensed",sans-serif;letter-spacing:.3px;background:var(--btn);color:var(--btnfg);border:0;border-radius:10px;padding:10px 18px;cursor:pointer}
+button:disabled{opacity:.35;cursor:default}
+button:focus-visible{outline:3px solid var(--line);outline-offset:2px}
+.tip{margin-top:12px;color:var(--mut);font-size:14px;text-align:center;max-width:380px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:20}
+.modal.on{display:flex}
+.sel{max-width:min(92vw,400px)}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-height:52vh;overflow:auto;margin:10px 0 14px}
+.grid button{padding:7px 0 4px;font-size:18px;line-height:1.1}
+.grid button small{display:block;font:500 10px Barlow,sans-serif;color:var(--line);letter-spacing:1px;min-height:12px}
+.grid button.cur{outline:3px solid var(--line);outline-offset:1px}
+.card{background:var(--card);border-radius:18px;padding:26px 30px;text-align:center;min-width:260px}
+.card h2{font:700 34px "Barlow Condensed",sans-serif;margin:0 0 4px}
+.stars{font-size:38px;color:var(--line);letter-spacing:4px;margin:6px 0}
+.modal.on .card{animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+.stars i{font-style:normal;display:inline-block;animation:star .55s both;animation-delay:calc(var(--n)*180ms + 250ms)}
+.stars i.off{color:var(--mut)}
+@keyframes star{from{transform:scale(0) rotate(-90deg)}60%{transform:scale(1.5) rotate(12deg)}to{transform:none}}
+.card p{margin:0 0 16px;color:var(--mut)}
+@media (prefers-reduced-motion:reduce){.car,.car.out{transition:none}*{animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Park It!</h1>
+  <div class="stats"><div><b id="mv">0</b>moves</div><div><b id="par">0</b>best</div></div>
+</header>
+<div class="lvl"><button id="prev" aria-label="Previous level">‹</button><span id="lv">Level 1</span><button id="next" aria-label="Next level">›</button></div>
+<div class="frame"><div class="board" id="board"></div></div>
+<div class="bar"><button id="undo">Undo</button><button id="reset">Restart</button><button id="hint">Hint</button><button id="snd">Sound on</button><button id="lvls">Levels</button></div>
+<p class="tip">Slide the cars to clear a path, then drive the red car out through the gap on the right.</p>
+<div class="modal" id="sel"><div class="card sel"><h2>Pick a level</h2><div class="grid" id="grid"></div><button id="closesel">Close</button></div></div>
+<div class="modal" id="modal"><div class="card"><h2>Parked!</h2><div class="stars" id="stars"></div><p id="msg"></p><button id="go">Next level</button></div></div>
+<script>
+(function(){
+var board=document.getElementById('board'),frame=board.parentNode;
+var COLORS=['#2f80ed','#27ae60','#f2994a','#9b51e0','#00a7a7','#eb5ba0','#8a6d3b','#5c6bc0','#c0ca33','#78909c','#26a69a'];
+var RED='#e5383b';
+var TOTAL=150;var cs=0,cars=[],pos=[],start=[],hist=[],moves=0,level=1,unlocked=1,done=false,best=0,drag=null;
+try{unlocked=parseInt(localStorage.getItem('parkit-unlocked'))||1}catch(e){}
+unlocked=Math.max(1,Math.min(unlocked,TOTAL));level=unlocked;
+
+var AC=null,muted=false;try{muted=localStorage.getItem('parkit-mute')==='1'}catch(e){}
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,t0,dur,type,vol,f2){var a=ac();if(!a||muted)return;var o=a.createOscillator(),g=a.createGain(),t=a.currentTime+(t0||0);o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||.15,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+dur+.02)}
+var SFX={pick:function(){tone(520,0,.06,'triangle',.08)},slide:function(){tone(140,0,.12,'sine',.25,70);tone(300,0,.05,'square',.04)},bump:function(){tone(90,0,.1,'square',.1,50)},undo:function(){tone(400,0,.1,'triangle',.1,250)},hint:function(){tone(880,0,.12,'sine',.12);tone(1320,.12,.18,'sine',.1)},rev:function(){tone(70,0,.7,'sawtooth',.1,260)},star:function(n){tone(660*Math.pow(1.26,n),0,.25,'triangle',.14)},win:function(){[523,659,784,1047].forEach(function(f,i){tone(f,i*.1,.3,'triangle',.13)})}};
+function sfx(n,a){try{SFX[n](a)}catch(e){}}
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function cell(c,v){return c.h?c.fy*6+v:v*6+c.fx}
+function occ(cs_,p,skip){var g=new Array(36).fill(-1);cs_.forEach(function(c,i){if(i===skip)return;for(var k=0;k<c.len;k++)g[cell(c,p[i]+k)]=i});return g}
+
+function solve(cs_,st,cap){
+  cap=cap||40000;
+  var seen=new Map();seen.set(st.join(''),null);
+  var q=[st],qi=0;
+  while(qi<q.length){
+    var p=q[qi++];
+    if(p[0]===4){var path=[],k=p.join('');while(seen.get(k)){var s=seen.get(k);path.push([s[1],s[2]]);k=s[0]}return path.reverse()}
+    if(seen.size>cap)return null;
+    var g=occ(cs_,p,-1),pk=p.join('');
+    for(var i=0;i<cs_.length;i++){
+      var c=cs_[i];
+      for(var d=-1;d<=1;d+=2){
+        var n=p[i]+d;
+        while(n>=0&&n+c.len<=6){
+          var edge=d>0?n+c.len-1:n;
+          if(g[cell(c,edge)]!==-1)break;
+          var np=p.slice();np[i]=n;var nk=np.join('');
+          if(!seen.has(nk)){seen.set(nk,[pk,i,n]);q.push(np)}
+          n+=d;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+var LEVELS=[[2,"20242124113131251"],[2,"20254024112311253"],[2,"20252024013421210"],[3,"10352024102011201"],[3,"10352024102001201"],[3,"10341023213001341"],[3,"20241025112500220"],[3,"00331024202101244"],[3,"00221024212300204"],[4,"00221022302520232"],[4,"20204025213530341"],[4,"00222024202530231"],[4,"00331024202100251"],[4,"00220024102510231"],[5,"00222024202510231"],[5,"10252135303420330"],[5,"00221024202510231"],[5,"10252135302240330"],[5,"202521353034002100313"],[5,"20350125303401243"],[6,"102521353034202240330"],[6,"0033102420251121102221253"],[6,"003310251124302221352"],[6,"0022112020342022302510232"],[6,"2025203401233121112531243"],[6,"2025213530341124412420301"],[7,"20350034012430323"],[7,"1033312540352021402241202"],[7,"102311254033303521302"],[7,"103420333125402140224"],[7,"1035012311353022413431203"],[7,"1034203331254021402241201"],[8,"10350024113410331030112341253"],[8,"11252034113430252023102131303"],[8,"21244034012330302125303511241"],[8,"10231125403330351130302140201"],[8,"10350024013420331030212341202"],[8,"1125303411342025202310214"],[9,"103230341125312110233023112020252"],[9,"1032303411244121102341202"],[9,"002530320120302311242025102430203125102131254"],[9,"2124412420252034012330303125112111253"],[9,"10350024113430331030212341254"],[9,"2120402511301030212500323025302001254"],[10,"103410251021413531331124302301201"],[10,"1023103431204124202410300120112521331"],[10,"00214034112310303124412541252025212031212"],[10,"2125212540350124102331244020102031312"],[10,"1035013430242131202320223123012521254"],[10,"202141244124202400203024202111200020112311252"],[11,"002210254124313000214123302300223"],[11,"11254033313020200023102240352021402020243"],[11,"102140224124312310341025313530302"],[11,"1033313020200023102240241035212541231"],[11,"202510214124412420240020402420211020112311200"],[11,"2034112440323120012530251020302131204"],[11,"00254120402220214022012521243123002000242"],[12,"203411353020312120214020102110233123112000250"],[12,"003411231030312441254124202311252025212020221"],[12,"012540214120202320341125212310303124312120250"],[12,"103230340125412441211023102520233"],[12,"1124413001310024202230233121302021353"],[12,"00244124212300231121402221233130212401351"],[13,"10250023212031343022302141201020013530242"],[13,"1034102510214135313311244120112031211"],[13,"11341124402040331133012000250120212101252"],[13,"002211202025002310210035302340340"],[13,"113411244120402421201135302040331025213301214"],[13,"00253120402230214022012430200024103301253"],[14,"002221244023112331202023412540340022412301211"],[14,"10253135303411232020402141230124302500231"],[14,"0022212440251023112330234125403400224123012111200"],[14,"00221024002500224130012321243123402311253"],[14,"102141201120402000202133112421254034112521211"],[14,"102101303124203310213125102441214030102200254"],[15,"202040251123002101232130212530341124312411251"],[15,"213530224021402010233120012310203035112120341"],[15,"002221244023312341254034012111202120002311252"],[15,"01202025102101230025302420232023402400222"],[15,"103500241021302341234121002231251121212540204"],[15,"102500232120313430223120102000242123012521213"],[15,"103410252021413531243120112041211020002021331"],[16,"2034113530224020312120214020102110233120002511231"],[16,"0025202220214022012430200024203301230121412531204"],[16,"113430223021402010242123002501254023212001203"],[16,"212330224024102020252124412311302120002501254"],[16,"00222124402331234034002241202120002311253"],[16,"2025003411353022402031212021402010211023312311201"],[17,"10350024113430331020402010223123413521200"],[17,"1035002401343033102010223123413531301"],[17,"2034113530224021402010211023312011231020303511212"],[17,"01202023202100234123002410253121202430223"],[17,"11230133202410300022012030353"],[17,"103410204025112321230023112011353120413100253"],[17,"1035013430331020102231234135313010340"],[18,"002210340025412431300021412330230"],[18,"003310254124302211241120202040241123402101231"],[18,"21353034112440312022412321300121003500202"],[18,"10323125412431203120002020352021302310241"],[18,"103231254124312021200020203520213023102411250"],[18,"0120202511230121202430232023402400222025302240200"],[19,"1123013320241030002201240120303530231"],[19,"102530341123202141230124312030250023102010220"],[19,"20341124403231254025212020214025002031200"],[19,"10323124312021200020203520213023102411210"],[19,"10323125412431202120002320241121103500213"],[19,"20341124403231254025202041203120102120250"],[20,"0022103401243130002141233023002230204"],[20,"103231254124312021200020203520213023102411210"],[20,"00320120402030213125112420251025302420330"],[20,"00221025103531242124002000340133002311201"],[20,"012020221124212040200135202041214123103310243"],[20,"20340124403231253025212020214025012000201"],[20,"1035013430331020302010223123413010340"],[21,"2135203421204025402300310025202231240"],[21,"00253032002411203023112420213025102430203"],[21,"0120202501230121202320240022202530224021002340200"],[21,"1025203411232021412301244120302500231022012540201"],[21,"00221025102301330035312421240120102000342"],[21,"00254032012520241120302311242021302520243"],[22,"003201204024402030213125112420251025302420331"],[22,"002530320024212030232124202130251024402031251"],[22,"21352034212040254023003110252022312400300"],[22,"11343033102020200022312341350130103400251"],[22,"002210240022413001232124312340230125302130204"],[22,"1025203421232021412301242120302500231125302010220"],[22,"21352034212040230031102510223030112400254"],[23,"112441300131002420224121302030252025012321203"],[23,"0120202211241120402001351020312141231025303320244"],[23,"102410300022012421204035102301244133213501230"],[23,"112441300131002420224023412130202025202501232"],[23,"112300241030002201204035102301242133213501254"],[23,"002210240025002241301123212431234023112530213"],[24,"0120202211242120402001352020312141231025303310243"],[24,"0024002500224130012321243123412530213023002030221"],[24,"1124413001310024202240234121302030252025012031254"],[24,"102410300120403511242133213501253123012400220"],[24,"0022102400250022413011232124312340231125302130204"],[24,"0120202211241120402001351020312141231025303310243"],[24,"11331034212031214022402020231025213531240"],[25,"2022302410204025213021310120002501244125112330234"],[25,"102410300022012401204035102301332135012531230"],[25,"2022302410202025213021310120002501244125112330234"],[25,"102410300022012040351023012441332135012531230"],[25,"0120102211241120302000203121412310254033302421350"],[25,"1124413001310024202240234121302020252025012311203"],[26,"1024103001204035102301242133213501253123012400220"],[26,"1124413001310024202240234121302040252025012321203"],[26,"1024103000220124012040351023012441332135012531230"],[26,"1024103000220124212040351023012441332135012531230"]];
+var stars={};try{stars=JSON.parse(localStorage.getItem('parkit-stars'))||{}}catch(e){}
+function gen(L){
+  var d=LEVELS[L-1],q=d[1],cs_=[{h:true,len:2,fx:0,fy:2}],p=[+q[0]];
+  for(var i=1;i+3<q.length;i+=4){var h=q[i]==='1',c={h:h,len:+q[i+1]};if(h)c.fy=+q[i+2];else c.fx=+q[i+2];cs_.push(c);p.push(+q[i+3])}
+  return {cars:cs_,pos:p,par:d[0]};
+}
+function genOld(L){
+  var r=rng(L*7919+13),minMoves=Math.min(3+Math.floor(L*1.5),24),nCars=Math.min(6+Math.floor(L/2),12);
+  var bestSol=-1,bestRes=null,t0=performance.now();
+  while(performance.now()-t0<450||!bestRes){
+    var cars_=[{h:true,len:2,fx:0,fy:2}],p=[Math.floor(r()*2)],tries=0;
+    while(cars_.length<nCars&&tries++<120){
+      var h=r()<.5,len=r()<.72?2:3,c={h:h,len:len},v=Math.floor(r()*(7-len)),f=Math.floor(r()*6);
+      if(h){if(f===2)continue;c.fy=f}else c.fx=f;
+      var g=occ(cars_,p,-1),ok=true;
+      for(var k=0;k<len;k++)if(g[cell(c,v+k)]!==-1)ok=false;
+      if(ok){cars_.push(c);p.push(v)}
+    }
+    var sol=solve(cars_,p,25000);
+    if(sol&&sol.length>bestSol){bestSol=sol.length;bestRes={cars:cars_,pos:p,par:sol.length};if(bestSol>=minMoves)break}
+  }
+  return bestRes;
+}
+
+function layout(){
+  cs=board.clientWidth/6;
+  board.style.setProperty('--c',cs+'px');
+  cars.forEach(function(c,i){place(i,pos[i])});
+  var ex=board.querySelector('.exit');
+  if(ex){ex.style.top=(2*cs+4)+'px';ex.style.height=(cs-8)+'px'}
+  var lb=board.querySelector('.exitlbl');
+  if(lb){lb.style.top=(2*cs+cs/2-8)+'px'}
+}
+function place(i,v){
+  var c=cars[i],el=c.el;
+  el.style.width=(c.h?c.len*cs:cs)-10+'px';
+  el.style.height=(c.h?cs:c.len*cs)-10+'px';
+  el.style.left=(c.h?v*cs:c.fx*cs)+5+'px';
+  el.style.top=(c.h?c.fy*cs:v*cs)+5+'px';
+}
+
+function load(L){
+  level=L;var res=gen(L);
+  cars=res.cars;start=res.pos.slice();pos=res.pos.slice();best=res.par;hist=[];moves=0;done=false;
+  board.innerHTML='<div class="exit"></div><span class="exitlbl">exit</span>';
+  cars.forEach(function(c,i){
+    var el=document.createElement('div');
+    el.className='car '+(c.h?'h':'v');el.dataset.i=i;
+    el.style.background=i===0?RED:'linear-gradient(180deg,'+COLORS[(i-1)%COLORS.length]+',color-mix(in srgb,'+COLORS[(i-1)%COLORS.length]+' 78%,#000))';
+    el.classList.add('enter');el.style.setProperty('--d',i);el.addEventListener('animationend',function(){el.classList.remove('enter')});
+    c.el=el;board.appendChild(el);
+  });
+  layout();ui();
+}
+function ui(){
+  document.getElementById('mv').textContent=moves;
+  document.getElementById('par').textContent=best;
+  document.getElementById('lv').textContent='Level '+level+' of '+TOTAL;
+  document.getElementById('prev').disabled=level<=1;
+  document.getElementById('next').disabled=level>=unlocked;
+  document.getElementById('undo').disabled=!hist.length||done;
+}
+
+board.addEventListener('pointerdown',function(e){
+  var el=e.target.closest('.car');if(!el||done)return;
+  var i=+el.dataset.i,c=cars[i],g=occ(cars,pos,i),lo=pos[i],hi=pos[i];
+  while(lo>0&&g[cell(c,lo-1)]===-1)lo--;
+  while(hi+c.len<6&&g[cell(c,hi+c.len)]===-1)hi++;
+  el.setPointerCapture(e.pointerId);el.classList.add('drag');ac();sfx('pick');
+  drag={i:i,lo:lo,hi:hi,sx:e.clientX,sy:e.clientY,p0:pos[i],cur:pos[i],el:el};
+});
+board.addEventListener('pointermove',function(e){
+  if(!drag)return;
+  var c=cars[drag.i],d=(c.h?e.clientX-drag.sx:e.clientY-drag.sy)/cs;
+  var raw=drag.p0+d,over=raw<drag.lo-.12||raw>drag.hi+.12;
+  if(over&&!drag.hit){sfx('bump');drag.hit=true}else if(!over)drag.hit=false;
+  drag.cur=Math.max(drag.lo,Math.min(drag.hi,raw));
+  place(drag.i,drag.cur);
+});
+function endDrag(){
+  if(!drag)return;
+  var i=drag.i,snap=Math.round(drag.cur);
+  drag.el.classList.remove('drag');
+  if(snap!==drag.p0){hist.push(pos.slice());pos[i]=snap;moves++;bump();sfx('slide')}
+  place(i,pos[i]);drag=null;ui();
+  if(pos[0]===4)win();
+}
+board.addEventListener('pointerup',endDrag);
+board.addEventListener('pointercancel',endDrag);
+
+function bump(){var m=document.getElementById('mv');m.classList.remove('bump');void m.offsetWidth;m.classList.add('bump')}
+function win(){
+  done=true;ui();
+  var el=cars[0].el;el.classList.add('rev');sfx('rev');
+  for(var k=0;k<7;k++)(function(k){setTimeout(function(){
+    var p=document.createElement('i');p.className='puff';
+    p.style.left=(pos[0]*cs+k*4)+'px';p.style.top=(2*cs+cs*(.3+Math.random()*.4))+'px';
+    board.appendChild(p);setTimeout(function(){p.remove()},900);
+  },k*90)})(k);
+  setTimeout(function(){el.classList.remove('rev');el.classList.add('out');el.style.left=(6*cs+30)+'px'},280);
+  setTimeout(function(){
+    var s=moves<=best?3:moves<=best+3?2:1;
+    document.getElementById('stars').innerHTML=[0,1,2].map(function(n){return '<i class="'+(n<s?'':'off')+'" style="--n:'+n+'">'+(n<s?'★':'☆')+'</i>'}).join('');
+    sfx('win');for(var n=0;n<s;n++)(function(n){setTimeout(function(){sfx('star',n)},250+n*180)})(n);
+    document.getElementById('msg').textContent=moves+' moves. Best possible is '+best+'.';
+    stars[level]=Math.max(stars[level]||0,s);try{localStorage.setItem('parkit-stars',JSON.stringify(stars))}catch(e){}
+    document.querySelector('#modal h2').textContent=level>=TOTAL?'All '+TOTAL+' levels cleared!':'Parked!';
+    document.getElementById('go').textContent=level>=TOTAL?'Play again':'Next level';
+    if(level>=unlocked&&level<TOTAL){unlocked=level+1;try{localStorage.setItem('parkit-unlocked',unlocked)}catch(e){}}
+    document.getElementById('modal').classList.add('on');ui();
+  },1050);
+}
+
+document.getElementById('go').onclick=function(){document.getElementById('modal').classList.remove('on');load(level<TOTAL?level+1:1)};
+document.getElementById('reset').onclick=function(){pos=start.slice();hist=[];moves=0;done=false;cars[0].el.classList.remove('out');layout();ui()};
+document.getElementById('undo').onclick=function(){if(!hist.length||done)return;pos=hist.pop();moves++;layout();ui();sfx('undo')};
+document.getElementById('hint').onclick=function(){
+  if(done)return;
+  var sol=solve(cars,pos,500000);
+  if(sol&&sol.length){var el=cars[sol[0][0]].el;el.classList.remove('hint');void el.offsetWidth;el.classList.add('hint');sfx('hint')}
+};
+document.getElementById('prev').onclick=function(){if(level>1)load(level-1)};
+document.getElementById('next').onclick=function(){if(level<unlocked)load(level+1)};
+var sel=document.getElementById('sel'),grid=document.getElementById('grid');
+document.getElementById('lvls').onclick=function(){
+  grid.innerHTML='';
+  for(var n=1;n<=TOTAL;n++)(function(n){
+    var b=document.createElement('button'),st=stars[n]||0;
+    b.innerHTML=n+'<small>'+(st?'\u2605'.repeat(st)+'\u2606'.repeat(3-st):'')+'</small>';
+    if(n>unlocked)b.disabled=true;if(n===level)b.className='cur';
+    b.onclick=function(){sel.classList.remove('on');document.getElementById('modal').classList.remove('on');load(n)};
+    grid.appendChild(b);
+  })(n);
+  sel.classList.add('on');
+  var cur=grid.children[level-1];if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:'center'});
+};
+document.getElementById('closesel').onclick=function(){sel.classList.remove('on')};
+var sb=document.getElementById('snd');function sync(){sb.textContent=muted?'Sound off':'Sound on'}sync();
+sb.onclick=function(){muted=!muted;try{localStorage.setItem('parkit-mute',muted?'1':'0')}catch(e){}sync();if(!muted){ac();sfx('pick')}};
+window.addEventListener('resize',layout);
+load(level);
+})();
+</script>
+</body>
+</html>

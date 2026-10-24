@@ -1,0 +1,6 @@
+{
+  "name": "Park It! Car Parking Puzzle",
+  "description": "A challenging sliding puzzle game where you slide cars and trucks to clear an exit path for the red sports car across 150 handcrafted levels with intelligent solver and hints.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
